@@ -11,12 +11,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.santhosh.dashboard.model.Alert;
+import com.santhosh.dashboard.model.Asset;
 import com.santhosh.dashboard.model.Incident;
 import com.santhosh.dashboard.model.Permission;
 import com.santhosh.dashboard.model.Role;
 import com.santhosh.dashboard.model.User;
 import com.santhosh.dashboard.model.Vulnerability;
 import com.santhosh.dashboard.repository.AlertRepository;
+import com.santhosh.dashboard.repository.AssetRepository;
 import com.santhosh.dashboard.repository.IncidentRepository;
 import com.santhosh.dashboard.repository.PermissionRepository;
 import com.santhosh.dashboard.repository.RoleRepository;
@@ -32,6 +34,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final IncidentRepository incidentRepository;
     private final AlertRepository alertRepository;
+    private final AssetRepository assetRepository;
     private final VulnerabilityRepository vulnerabilityRepository;
 
     public DataInitializer(
@@ -41,6 +44,7 @@ public class DataInitializer implements CommandLineRunner {
             PasswordEncoder passwordEncoder,
             IncidentRepository incidentRepository,
             AlertRepository alertRepository,
+            AssetRepository assetRepository,
             VulnerabilityRepository vulnerabilityRepository) {
 
         this.userRepository = userRepository;
@@ -49,6 +53,7 @@ public class DataInitializer implements CommandLineRunner {
         this.passwordEncoder = passwordEncoder;
         this.incidentRepository = incidentRepository;
         this.alertRepository = alertRepository;
+        this.assetRepository = assetRepository;
         this.vulnerabilityRepository = vulnerabilityRepository;
     }
 
@@ -355,7 +360,31 @@ public class DataInitializer implements CommandLineRunner {
         );
 
         // ─────────────────────────────────────────────────────────────
-        // 5. Seed Incidents
+        // 5. Seed Assets
+        // ─────────────────────────────────────────────────────────────
+
+        if (assetRepository.count() == 0) {
+
+            assetRepository.save(new Asset(null, "WEB-SERVER-01", "192.168.1.10",
+                    "Web Server", "Active", 42, 58, 51, 35, 99.2, "Chennai"));
+
+            assetRepository.save(new Asset(null, "DB-SERVER-01", "192.168.1.20",
+                    "Database Server", "Active", 61, 67, 72, 44, 98.7, "Bengaluru"));
+
+            assetRepository.save(new Asset(null, "FIREWALL-01", "192.168.1.1",
+                    "Firewall", "Active", 28, 39, 45, 52, 99.8, "Mumbai"));
+
+            assetRepository.save(new Asset(null, "BACKUP-SERVER-01", "192.168.1.30",
+                    "Backup Server", "Maintenance", 18, 31, 64, 22, 96.4, "Delhi"));
+
+            assetRepository.save(new Asset(null, "ENDPOINT-01", "192.168.1.40",
+                    "Endpoint", "Offline", 0, 0, 25, 0, 0.0, "Hyderabad"));
+
+            System.out.println("[SentinelCore] Demo assets created: 5");
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // 6. Seed Incidents
         // ─────────────────────────────────────────────────────────────
 
         if (incidentRepository.count() == 0) {
@@ -393,7 +422,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         // ─────────────────────────────────────────────────────────────
-        // 6. Seed Alerts
+        // 7. Seed Alerts
         // ─────────────────────────────────────────────────────────────
 
         if (alertRepository.count() == 0) {
@@ -427,7 +456,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         // ─────────────────────────────────────────────────────────────
-        // 7. Seed Vulnerabilities
+        // 8. Seed Vulnerabilities
         // ─────────────────────────────────────────────────────────────
 
         if (vulnerabilityRepository.count() == 0) {
