@@ -1,0 +1,1 @@
+package com.santhosh.dashboard.repository; import com.santhosh.dashboard.model.SecurityEvent; import org.springframework.data.jpa.repository.JpaRepository; public interface SecurityEventRepository extends JpaRepository<SecurityEvent,Long>{}
