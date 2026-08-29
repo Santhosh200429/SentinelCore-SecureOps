@@ -14,8 +14,11 @@ export default function ProfileDropdown() {
 
     const handleLogoutClick = useCallback(async () => {
         closeDropdown();
-        await logout();
-        navigate('/login?logout', { replace: true });
+        try {
+            await logout();
+        } finally {
+            navigate('/login?logout', { replace: true });
+        }
     }, [logout, navigate, closeDropdown]);
 
     // Click outside listener

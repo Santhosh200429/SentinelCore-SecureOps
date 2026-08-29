@@ -12,7 +12,7 @@ export default function SettingsPage() {
     // Tab 1: General settings
     const [retention, setRetention] = useState('90 Days');
     const [debugLevel, setDebugLevel] = useState('INFO');
-    const [simSpeed, setSimSpeed] = useState('Fast (2s)');
+    const [simSpeed, setSimSpeed] = useState('Live telemetry interval');
 
     // Tab 2: Password Policy checklist states
     const [minLength, setMinLength] = useState(12);
@@ -32,10 +32,7 @@ export default function SettingsPage() {
     // Tab 4: Backups states
     const [autoBackupFreq, setAutoBackupFreq] = useState('Daily');
     const [backupS3Bucket, setBackupS3Bucket] = useState('s3://sentinelstore-vault-prod');
-    const [backups, setBackups] = useState([
-        { id: 'BKP-789', timestamp: '2026-07-25 04:00:23', size: '1.42 GB', status: 'Success' },
-        { id: 'BKP-788', timestamp: '2026-07-24 04:00:15', size: '1.41 GB', status: 'Success' }
-    ]);
+    const [backups, setBackups] = useState([]);
     const [backingUp, setBackingUp] = useState(false);
 
     // Enforce ADMIN or SUPER_ADMIN role guard inside component
@@ -76,14 +73,14 @@ export default function SettingsPage() {
 
         setTimeout(() => {
             const newBackup = {
-                id: `BKP-${Math.floor(100 + Math.random() * 900)}`,
+                id: 'Data unavailable',
                 timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-                size: '1.43 GB',
-                status: 'Success'
+                size: 'Data unavailable',
+                status: 'Integration not configured'
             };
             setBackups([newBackup, ...backups]);
             setBackingUp(false);
-            showToast('AES-256 database backup created and synced to secure S3 storage!', 'success');
+            showToast('Backup integration is not configured. No remote backup was created.', 'warning');
         }, 2200);
     };
 

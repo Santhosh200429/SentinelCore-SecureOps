@@ -8,13 +8,19 @@
  * State   : Manages the `collapsed` sidebar state, allowing it to be shared/synchronized.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '../components/common/Navbar/Navbar.jsx';
 import Sidebar from '../components/common/Sidebar/Sidebar.jsx';
 import FloatingAIButton from '../components/ai/FloatingAIButton.jsx';
 
 export default function DashboardLayout({ children }) {
     const [collapsed, setCollapsed] = useState(false);
+
+    useEffect(() => {
+        const toggle = () => setCollapsed(prev => !prev);
+        window.addEventListener('sentinelcore:toggle-sidebar', toggle);
+        return () => window.removeEventListener('sentinelcore:toggle-sidebar', toggle);
+    }, []);
 
     return (
         <div className="app-container" id="appBody">

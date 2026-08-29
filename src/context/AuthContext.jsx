@@ -127,9 +127,11 @@ export function AuthProvider({ children }) {
     const logout = useCallback(async () => {
         try {
             await authService.logout();
-        } catch { /* ignore errors during logout */ }
-        setUser(null);
-        window.location.href = '/login?logout';
+        } catch {
+            // Continue with client sign-out if the server is already unavailable.
+        } finally {
+            setUser(null);
+        }
     }, []);
 
     const isAuthenticated = !!user;

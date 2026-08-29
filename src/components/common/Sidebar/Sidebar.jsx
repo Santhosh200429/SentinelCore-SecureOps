@@ -22,6 +22,7 @@
 
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext.jsx';
+import logo from '../../../assets/logo.svg';
 
 export default function Sidebar({ collapsed, onToggle }) {
     const { hasPermission, hasRole, logout } = useAuth();
@@ -39,13 +40,17 @@ export default function Sidebar({ collapsed, onToggle }) {
     const canSettings = hasRole('ROLE_ADMIN') || hasRole('ROLE_SUPER_ADMIN');
 
     async function handleLogout() {
-        await logout();
-        navigate('/login?logout', { replace: true });
+        try {
+            await logout();
+        } finally {
+            navigate('/login?logout', { replace: true });
+        }
     }
 
     // Nav items config — exact icon classes + text from dashboard.html
     const navItems = [
         { to: '/dashboard', icon: 'ph-squares-four', label: 'Dashboard', show: canView },
+        { to: '/security-command-center', icon: 'ph-radar', label: 'Security Command', show: canView },
         { to: '/infrastructure', icon: 'ph-tree-structure', label: 'Infrastructure', show: canView },
         { to: '/assets', icon: 'ph-hard-drives', label: 'Assets', show: canView },
         { to: '/incidents', icon: 'ph-shield-warning', label: 'Incidents', show: canIncident },
@@ -60,6 +65,14 @@ export default function Sidebar({ collapsed, onToggle }) {
 
     return (
         <aside className={`sidebar${collapsed ? ' collapsed' : ''}`} id="appSidebar">
+            <div className="sidebar-brand">
+                <img src={logo} alt="SentinelCore" className="sidebar-brand-logo" />
+                <div className="sidebar-brand-copy">
+                    <strong>SentinelCore</strong>
+                    <span>SecureOps</span>
+                </div>
+            </div>
+
             {/* Toggle button — mirrors #sidebarToggleBtn */}
             <div
                 className="sidebar-toggle-btn"

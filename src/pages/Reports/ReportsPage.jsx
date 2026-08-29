@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout.jsx';
 import { useToast } from '../../components/common/Toast/Toast.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -19,10 +19,15 @@ export default function ReportsPage() {
     const [reportFormat, setReportFormat] = useState('pdf');
 
     // Scheduler states
-    const [schedules, setSchedules] = useState([
-        { type: 'Executive Summary', freq: 'Weekly', time: 'Monday at 08:00 UTC', email: 'secops-team@sentinelcore.com' },
-        { type: 'Vulnerability CVE Report', freq: 'Monthly', time: '1st of the month at 00:00 UTC', email: 'compliance@sentinelcore.com' }
-    ]);
+    const [schedules, setSchedules] = useState([]);
+    const loadSchedules = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/report-schedules', { headers: { Authorization: token ? `Bearer ${token}` : '' } });
+            if (response.ok) setSchedules(await response.json());
+        } catch (e) { console.error('Schedule load failed', e); }
+    };
+    useEffect(() => { loadSchedules(); }, []);
     const [schedType, setSchedType] = useState('Executive Summary');
     const [schedFreq, setSchedFreq] = useState('Daily');
     const [schedTime, setSchedTime] = useState('00:00');
@@ -570,21 +575,30 @@ export default function ReportsPage() {
         }
     };
 
-    const handleAddDeliverySchedule = (e) => {
+    const handleAddDeliverySchedule = async (e) => {
         e.preventDefault();
-        if (!schedEmail || !schedEmail.includes('@')) {
-            showToast('Please enter a valid subscriber email address', 'error');
-            return;
-        }
-        const newSched = {
-            type: schedType,
-            freq: schedFreq,
-            time: `Every ${schedFreq === 'Daily' ? 'day' : schedFreq === 'Weekly' ? 'Monday' : 'Month'} at ${schedTime} UTC`,
-            email: schedEmail.trim()
-        };
-        setSchedules([...schedules, newSched]);
-        setSchedEmail('');
-        showToast('Cron compliance report delivery slot registered!', 'success');
+        if (!schedEmail || !schedEmail.includes('@')) { showToast('Please enter a valid subscriber email address', 'error'); return; }
+        try {
+            const token = localStorage.getItem('token');
+            const frequency = schedFreq.toUpperCase();
+            const response = await fetch('/api/report-schedules', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
+                body: JSON.stringify({ reportType: schedType, frequency, localTime: schedTime, recipient: schedEmail.trim(), dayOfWeek: 1, dayOfMonth: 1 })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Unable to create schedule');
+            setSchedules(prev => [...prev, data]); setSchedEmail('');
+            showToast('Scheduled delivery saved in PostgreSQL (IST).', 'success');
+        } catch (error) { console.error(error); showToast(error.message || 'Unable to save schedule', 'error'); }
+    };
+
+    const deleteSchedule = async (id) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/report-schedules/${id}`, { method: 'DELETE', headers: { Authorization: token ? `Bearer ${token}` : '' } });
+            if (!response.ok) throw new Error('Unable to delete schedule');
+            setSchedules(prev => prev.filter(s => s.id !== id)); showToast('Schedule removed.', 'success');
+        } catch (error) { showToast(error.message, 'error'); }
     };
 
     return (
@@ -666,6 +680,7 @@ export default function ReportsPage() {
                     {/* Schedule Manager */}
                     <div className="panel-card">
                         <h2 className="panel-title" style={{ marginBottom: 15 }}><i className="ph ph-calendar" style={{ marginRight: 6 }} /> Schedule Automated Deliveries</h2>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: 10 }}>All schedule times use India Standard Time (IST / Asia-Kolkata).</div>
                         <form onSubmit={handleAddDeliverySchedule} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             <div style={{ display: 'flex', gap: 8 }}>
                                 <div style={{ flex: 1 }}>
@@ -686,7 +701,7 @@ export default function ReportsPage() {
                                     </select>
                                 </div>
                                 <div style={{ width: 80 }}>
-                                    <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>UTC Time</label>
+                                    <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>IST Time</label>
                                     <input type="time" value={schedTime} onChange={e => setSchedTime(e.target.value)} style={{ width: '100%', padding: '6px 8px', fontSize: '0.78rem', background: 'var(--bg-inset)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 4 }} />
                                 </div>
                             </div>
@@ -708,11 +723,11 @@ export default function ReportsPage() {
                                 <div key={idx} style={{ padding: 12, background: 'var(--bg-inset)', borderRadius: 6, border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <strong style={{ fontSize: '0.8rem', display: 'block' }}>{s.type}</strong>
-                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}><i className="ph ph-timer" /> {s.time}</span>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}><i className="ph ph-timer" /> {s.frequency} at {String(s.localTime || '').slice(0,5)} IST</span>
                                     </div>
                                     <div style={{ textAlignment: 'right' }}>
-                                        <div style={{ fontSize: '0.74rem', fontWeight: 600 }}>{s.email}</div>
-                                        <span style={{ fontSize: '0.66rem', color: 'var(--success-green)', cursor: 'pointer' }} onClick={() => triggerTestDispatch(s.email, s.type)}>Test dispatch</span>
+                                        <div style={{ fontSize: '0.74rem', fontWeight: 600 }}>{s.recipient}</div>
+                                        <div style={{ display: 'flex', gap: 10, fontSize: '0.66rem' }}><span style={{ color: 'var(--success-green)', cursor: 'pointer' }} onClick={() => triggerTestDispatch(s.recipient, s.reportType)}>Test dispatch</span><span style={{ color: 'var(--danger)', cursor: 'pointer' }} onClick={() => deleteSchedule(s.id)}>Delete</span></div>
                                     </div>
                                 </div>
                             ))}

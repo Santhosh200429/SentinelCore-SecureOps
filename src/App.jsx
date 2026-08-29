@@ -26,6 +26,7 @@ import UsersPage from './pages/Users/UsersPage.jsx';
 import ReportsPage from './pages/Reports/ReportsPage.jsx';
 import SettingsPage from './pages/Settings/SettingsPage.jsx';
 import ProfilePage from './pages/Profile/ProfilePage.jsx';
+import SecurityCommandCenterPage from './pages/SecurityCommandCenter/SecurityCommandCenterPage.jsx';
 
 // ── Auth Wrappers ─────────────────────────────────────────────────────────────
 
@@ -74,6 +75,8 @@ export default function App() {
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
       {/* ── Dashboard ─────────────────────────────────────────────────────── */}
+      <Route path="/security-command-center" element={<ProtectedRoute><SecurityCommandCenterPage /></ProtectedRoute>} />
+
       <Route
         path="/dashboard"
         element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}

@@ -17,6 +17,7 @@ const infrastructureService = {
      *            vaultHsmStatus, dbConnections }
      */
     getTelemetry: () => axiosInstance.get('/api/infrastructure/telemetry'),
+    getProcesses: () => axiosInstance.get('/api/infrastructure/processes'),
 };
 
 export default infrastructureService;

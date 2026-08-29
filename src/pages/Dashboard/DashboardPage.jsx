@@ -43,31 +43,12 @@ export default function DashboardPage() {
     const [auditLogs, setAuditLogs] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const [liveFeed, setLiveFeed] = useState([
-        { time: '14:22:15', module: 'FIREWALL', msg: 'Blocked unauthorized SMB query from 192.168.1.189', color: 'var(--danger-red)' },
-        { time: '14:20:02', module: 'AUTH', msg: 'MFA signature verified for Administrator', color: 'var(--success-green)' },
-        { time: '14:18:44', module: 'MONITOR', msg: 'Prometheus cluster target AP-03 matched latency SLO', color: 'var(--highlight-blue)' }
-    ]);
-
-    useEffect(() => {
-        const msgs = [
-            { module: 'SHIELD', msg: 'Dynamic patch deployment verification confirmed', color: 'var(--success-green)' },
-            { module: 'AUDIT', msg: 'System logs archive validated by SHA256 ledger', color: 'var(--highlight-blue)' },
-            { module: 'IDS', msg: 'Snort rule matched: Possible port-scan source logged', color: 'var(--warning-amber)' },
-            { module: 'KUBE', msg: 'Scale replica target auto-optimized status ok', color: 'var(--success-green)' }
-        ];
-
-        const id = setInterval(() => {
-            const pick = msgs[Math.floor(Math.random() * msgs.length)];
-            const time = new Date().toLocaleTimeString();
-            setLiveFeed(prev => [
-                { time, ...pick },
-                ...prev.slice(0, 4)
-            ]);
-        }, 6000);
-
-        return () => clearInterval(id);
-    }, []);
+    const liveFeed = alerts.slice(0, 5).map(a => ({
+        time: a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : '—',
+        module: 'ALERT',
+        msg: `${a.title || 'Security alert'}${a.source ? ` • ${a.source}` : ''}`,
+        color: String(a.severity || '').toLowerCase() === 'critical' ? 'var(--danger-red)' : 'var(--warning-amber)'
+    }));
 
     const triggerAction = (msg) => {
         showToast(msg);

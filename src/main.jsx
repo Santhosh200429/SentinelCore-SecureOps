@@ -9,6 +9,7 @@ import './styles/main.css';
 import './index.css';
 import './styles/aiAssistant.css';
 import './styles/profile.css';
+import './styles/ui-redesign.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

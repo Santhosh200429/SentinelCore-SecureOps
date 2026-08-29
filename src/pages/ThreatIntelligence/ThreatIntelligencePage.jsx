@@ -61,11 +61,7 @@ export default function ThreatIntelligencePage() {
     const [selectedTech, setSelectedTech] = useState(null);
 
     // Blacklisted IP list state
-    const [blacklist, setBlacklist] = useState([
-        { ip: '185.190.140.12', reason: 'Active C2 Botnet Beaconing', level: 'Critical', added: '2026-07-20' },
-        { ip: '94.23.200.4', reason: 'SMTP Spam/Brute-force Scanner', level: 'High', added: '2026-07-22' },
-        { ip: '198.51.100.45', reason: 'SSH Tunneling Port Scan Agent', level: 'Medium', added: '2026-07-24' }
-    ]);
+    const [blacklist, setBlacklist] = useState([]);
     const [newIp, setNewIp] = useState('');
     const [newReason, setNewReason] = useState('');
     const [newLevel, setNewLevel] = useState('High');
@@ -77,39 +73,13 @@ export default function ThreatIntelligencePage() {
         { id: 3, origin: 'Amsterdam, NL', target: 'DevOps-Kubernetes', port: '6443 (APIServer)', event: 'Kubeflow dashboard probe', time: '12s ago' }
     ]);
 
-    // Attack chart data (last 8 hours)
-    const chartData = [
-        { hour: '08:00', attacks: 120, blocked: 120 },
-        { hour: '10:00', attacks: 240, blocked: 239 },
-        { hour: '12:00', attacks: 310, blocked: 310 },
-        { hour: '14:00', attacks: 180, blocked: 180 },
-        { hour: '16:00', attacks: 420, blocked: 418 },
-        { hour: '18:00', attacks: 380, blocked: 380 },
-        { hour: '20:00', attacks: 490, blocked: 490 },
-        { hour: '22:00', attacks: 512, blocked: 512 }
-    ];
+    // No external threat-intelligence source is configured.
+    const chartData = [];
 
-    // Simulating dynamic attacks feed ticking
+    // Live threat-feed integration is not configured in this build.
+    // Keep the UI truthful instead of synthesizing attack events.
     useEffect(() => {
-        const interval = setInterval(() => {
-            const countries = ['Sofia, BG', 'Seoul, KR', 'Dublin, IE', 'Frankfurt, DE', 'Mumbai, IN', 'São Paulo, BR'];
-            const targets = ['SecOps-Router', 'API-Gateway', 'Database-Replica-0', 'Web-Portal-Prod'];
-            const ports = ['80 (HTTP)', '3389 (RDP)', '5432 (Postgres)', '9092 (Kafka)'];
-            const causes = ['LFI Probe', 'RDP Auth flood', 'Port enumeration scan', 'Deserialization vulnerability attempt'];
-
-            const newAttack = {
-                id: Date.now(),
-                origin: countries[Math.floor(Math.random() * countries.length)],
-                target: targets[Math.floor(Math.random() * targets.length)],
-                port: ports[Math.floor(Math.random() * ports.length)],
-                event: causes[Math.floor(Math.random() * causes.length)],
-                time: 'Just now'
-            };
-
-            setAttacks(prev => [newAttack, ...prev.slice(0, 4)]);
-        }, 6000);
-
-        return () => clearInterval(interval);
+        setAttacks([]);
     }, []);
 
     const handleAddIp = (e) => {
@@ -134,7 +104,7 @@ export default function ThreatIntelligencePage() {
         setBlacklist([...blacklist, record]);
         setNewIp('');
         setNewReason('');
-        showToast('Rule deployed: IP permanently routed to blackhole null interface!', 'success');
+        showToast('Blocklist entry recorded locally. Firewall integration is not configured.', 'warning');
     };
 
     const handleRevokeIp = (ipAddress) => {
@@ -148,7 +118,7 @@ export default function ThreatIntelligencePage() {
         }).then(result => {
             if (result.isConfirmed) {
                 setBlacklist(blacklist.filter(x => x.ip !== ipAddress));
-                showToast(`Dynamic filter for ${ipAddress} revoked.`, 'info');
+                showToast(`Local blocklist entry for ${ipAddress} revoked.`, 'info');
             }
         });
     };
