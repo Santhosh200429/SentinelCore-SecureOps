@@ -1,0 +1,10 @@
+
+# Production/local secrets
+.env
+backend/.env
+frontend/.env.local
+
+node_modules/
+frontend/dist/
+backend/target/
+agent/target/
