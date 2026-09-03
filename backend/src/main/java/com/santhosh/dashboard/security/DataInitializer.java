@@ -5,11 +5,11 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Value;
 
 import com.santhosh.dashboard.model.Alert;
 import com.santhosh.dashboard.model.Asset;
@@ -303,29 +303,59 @@ public class DataInitializer implements CommandLineRunner {
         // 3. Bootstrap Super Admin
         // ─────────────────────────────────────────────────────────────
 
-        if (bootstrapAdminEnabled && userRepository.findByUsername(bootstrapAdminUsername).isEmpty()) {
+        if (bootstrapAdminEnabled) {
 
-            User admin = new User(
-                    bootstrapAdminUsername,
-                    passwordEncoder.encode(bootstrapAdminPassword),
-                    bootstrapAdminEmail
-            );
+    User admin = userRepository.findByUsername(bootstrapAdminUsername)
+            .orElse(null);
 
-            admin.setFirstName("System");
-            admin.setLastName("Administrator");
-            admin.setOrganization("SentinelCore");
+    Role superAdminRole = roleMap.get("ROLE_SUPER_ADMIN");
 
-            Role superAdminRole =
-                    roleMap.get("ROLE_SUPER_ADMIN");
+    if (admin == null) {
 
-            if (superAdminRole != null) {
-                admin.getRoles().add(superAdminRole);
-            }
+        admin = new User(
+                bootstrapAdminUsername,
+                passwordEncoder.encode(bootstrapAdminPassword),
+                bootstrapAdminEmail
+        );
 
-            userRepository.save(admin);
+        admin.setFirstName("System");
+        admin.setLastName("Administrator");
+        admin.setOrganization("SentinelCore");
 
-            System.out.println("[SentinelCore] Bootstrap admin created: " + bootstrapAdminUsername);
+        if (superAdminRole != null) {
+            admin.getRoles().add(superAdminRole);
         }
+
+        userRepository.save(admin);
+
+        System.out.println(
+                "[SentinelCore] Bootstrap admin created: "
+                        + bootstrapAdminUsername
+        );
+
+    } else {
+
+        // Existing admin: reset password using BCrypt
+        admin.setPassword(
+                passwordEncoder.encode(bootstrapAdminPassword)
+        );
+
+        admin.setEmail(bootstrapAdminEmail);
+        admin.setEnabled(true);
+        admin.setLocked(false);
+
+        if (superAdminRole != null && !admin.getRoles().contains(superAdminRole)) {
+            admin.getRoles().add(superAdminRole);
+        }
+
+        userRepository.save(admin);
+
+        System.out.println(
+                "[SentinelCore] Bootstrap admin password updated: "
+                        + bootstrapAdminUsername
+        );
+    }
+}
 
         // ─────────────────────────────────────────────────────────────
         // 4. Bootstrap Demo Users (demo mode only)
