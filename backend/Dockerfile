@@ -27,7 +27,7 @@ RUN ./mvnw dependency:go-offline -q
 COPY src src
 
 # Build Spring Boot application
-RUN ./mvnw clean package -DskipTests -q
+RUN ./mvnw clean package -DskipTests
 
 
 # ------------------------------------------------------------
