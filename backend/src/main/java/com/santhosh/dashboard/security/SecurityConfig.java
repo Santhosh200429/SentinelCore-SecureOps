@@ -134,8 +134,31 @@ public class SecurityConfig {
     }
 
     private AuthenticationFailureHandler failureHandler() {
-        return (request, response, exception) -> {
-            String errorParam;
+    return (request, response, exception) -> {
+
+        System.err.println("========== LOGIN FAILURE ==========");
+        System.err.println("Username: " + request.getParameter("username"));
+        System.err.println("Exception: " + exception.getClass().getName());
+        System.err.println("Message: " + exception.getMessage());
+        exception.printStackTrace();
+        System.err.println("===================================");
+
+        String errorParam;
+
+        if (exception instanceof LockedException) {
+            errorParam = "locked";
+        } else if (exception.getMessage() != null &&
+                   exception.getMessage().toLowerCase().contains("disabled")) {
+            errorParam = "disabled";
+        } else {
+            errorParam = "true";
+        }
+
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"" + errorParam + "\"}");
+    };
+}
             if (exception instanceof LockedException) {
                 errorParam = "locked";
             } else if (exception.getMessage() != null &&
