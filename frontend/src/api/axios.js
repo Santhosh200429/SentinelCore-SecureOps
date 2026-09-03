@@ -6,35 +6,58 @@
  *
  * NORMAL API CLIENT:
  *   Uses VITE_API_URL.
- *   If VITE_API_URL ends with /api, normal requests use:
+ *
+ *   If VITE_API_URL is:
+ *
+ *       https://sentinelcore-secureops-o5wr.onrender.com/api
+ *
+ *   then normal API requests become:
  *
  *       https://sentinelcore-secureops-o5wr.onrender.com/api/...
  *
  * AUTH CLIENT:
  *   Spring Security login/logout endpoints are NOT under /api.
- *   Therefore authentication requests use the backend root:
  *
  *       https://sentinelcore-secureops-o5wr.onrender.com/login
  *       https://sentinelcore-secureops-o5wr.onrender.com/logout
  *
- * This allows VITE_API_URL to remain:
+ * IMPORTANT:
+ *   Some existing service files use paths such as:
  *
- *   https://sentinelcore-secureops-o5wr.onrender.com/api
+ *       /api/dashboard/user
+ *       /api/incidents
+ *       /api/alerts/live
  *
- * without breaking Spring Security authentication.
+ *   Since VITE_API_URL already contains /api, this file removes the
+ *   duplicate /api from the request path.
+ *
+ *   Example:
+ *
+ *       baseURL = https://...onrender.com/api
+ *       request  = /api/dashboard/user
+ *
+ *   becomes:
+ *
+ *       https://...onrender.com/api/dashboard/user
+ *
+ *   instead of:
+ *
+ *       https://...onrender.com/api/api/dashboard/user
  *
  * Features:
  *   - withCredentials keeps JSESSIONID alive
  *   - CSRF interceptor reads XSRF-TOKEN
  *   - Normal API 401/403 handling is preserved
- *   - Authentication requests use a separate client so a failed
- *     login does not trigger the session-expired redirect.
+ *   - Authentication requests use a separate client
+ *   - Failed login does not trigger session-expired redirect
+ *   - Prevents duplicate /api/api paths
  */
 
 import axios from 'axios';
 
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers
+// CSRF TOKEN HELPER
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -43,7 +66,9 @@ import axios from 'axios';
  * @returns {string|null}
  */
 function getCsrfToken() {
-    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+
+    const match =
+        document.cookie.match(/XSRF-TOKEN=([^;]+)/);
 
     return match
         ? decodeURIComponent(match[1])
@@ -54,29 +79,45 @@ function getCsrfToken() {
 // ─────────────────────────────────────────────────────────────────────────────
 // API BASE URL
 // ─────────────────────────────────────────────────────────────────────────────
-
-// VITE_API_URL can remain:
-// https://sentinelcore-secureops-o5wr.onrender.com/api
 //
-// Locally it can be empty so Vite's dev proxy handles /api/*.
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
-
-
-// Remove trailing /api for Spring Security authentication.
+// Vercel environment variable:
 //
-// Example:
+// VITE_API_URL=https://sentinelcore-secureops-o5wr.onrender.com/api
 //
-// API_BASE:
-// https://sentinelcore-secureops-o5wr.onrender.com/api
+// Local development can leave VITE_API_URL empty so that Vite's
+// development proxy can handle /api/* requests.
 //
-// AUTH_BASE:
-// https://sentinelcore-secureops-o5wr.onrender.com
 
-const AUTH_BASE = API_BASE.endsWith('/api')
-    ? API_BASE.slice(0, -4)
-    : API_BASE;
+const API_BASE =
+    import.meta.env.VITE_API_URL || '';
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH BASE URL
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Spring Security authentication endpoints are:
+//
+//     /login
+//     /logout
+//
+// They are NOT:
+//
+//     /api/login
+//     /api/logout
+//
+// Therefore remove the trailing /api from API_BASE.
+//
+
+const AUTH_BASE =
+    API_BASE.endsWith('/api')
+        ? API_BASE.slice(0, -4)
+        : API_BASE;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEBUG LOGS
+// ─────────────────────────────────────────────────────────────────────────────
 
 console.log(
     'VITE_API_URL =',
@@ -97,13 +138,26 @@ console.log(
 // ─────────────────────────────────────────────────────────────────────────────
 // NORMAL API CLIENT
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// Used by services such as:
+//
+//     dashboardService
+//     incidentService
+//     alertService
+//     assetService
+//     userService
+//     vulnerabilityService
+//     etc.
+//
+// The base URL already contains /api.
+//
 
 const axiosInstance = axios.create({
 
-    // Normal REST API requests use /api
     baseURL: API_BASE,
 
-    // Send JSESSIONID session cookie
+    // Required so browser sends the JSESSIONID session cookie
+    // to the Render backend.
     withCredentials: true,
 
     headers: {
@@ -116,27 +170,19 @@ const axiosInstance = axios.create({
 // AUTHENTICATION CLIENT
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// IMPORTANT:
+// Used for:
 //
-// Spring Security is configured with:
+//     POST /login
+//     POST /logout
 //
-//     loginProcessingUrl("/login")
-//
-// and:
-//
-//     logoutRequestMatcher("/logout")
-//
-// Therefore these requests must NOT contain /api.
-//
-// This client uses AUTH_BASE instead of API_BASE.
+// This client intentionally does NOT use API_BASE.
 //
 
 const authAxios = axios.create({
 
-    // Root backend URL, without /api
     baseURL: AUTH_BASE,
 
-    // Required for JSESSIONID
+    // Required for JSESSIONID authentication.
     withCredentials: true,
 
     headers: {
@@ -146,12 +192,69 @@ const authAxios = axios.create({
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CSRF INTERCEPTOR — NORMAL API CLIENT
+// NORMAL API REQUEST INTERCEPTOR
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// IMPORTANT FIX:
+//
+// Existing service files may contain:
+//
+//     axiosInstance.get('/api/dashboard/user')
+//
+// But API_BASE already contains:
+//
+//     /api
+//
+// Without normalization:
+//
+//     /api + /api/dashboard/user
+//
+// becomes:
+//
+//     /api/api/dashboard/user
+//
+// Therefore remove the first /api from request paths.
+//
 
 axiosInstance.interceptors.request.use(
 
     (config) => {
+
+        // ─────────────────────────────────────────────────────────────
+        // Prevent duplicate /api/api paths
+        // ─────────────────────────────────────────────────────────────
+        //
+        // Example:
+        //
+        // config.url:
+        //     /api/dashboard/user
+        //
+        // becomes:
+        //
+        //     /dashboard/user
+        //
+        // Axios then combines it with:
+        //
+        //     https://...onrender.com/api
+        //
+        // Result:
+        //
+        //     https://...onrender.com/api/dashboard/user
+        //
+
+        if (
+            config.url &&
+            config.url.startsWith('/api/')
+        ) {
+
+            config.url =
+                config.url.substring(4);
+        }
+
+
+        // ─────────────────────────────────────────────────────────────
+        // CSRF
+        // ─────────────────────────────────────────────────────────────
 
         const mutatingMethods = [
             'post',
@@ -160,39 +263,42 @@ axiosInstance.interceptors.request.use(
             'patch',
         ];
 
-        const method = config.method?.toLowerCase();
+        const method =
+            config.method?.toLowerCase();
 
-        if (mutatingMethods.includes(method)) {
+        if (
+            mutatingMethods.includes(method)
+        ) {
 
-            const token = getCsrfToken();
+            const token =
+                getCsrfToken();
 
             if (token) {
 
-                config.headers['X-XSRF-TOKEN'] = token;
+                config.headers =
+                    config.headers || {};
+
+                config.headers['X-XSRF-TOKEN'] =
+                    token;
             }
         }
+
 
         return config;
     },
 
     (error) => {
+
         return Promise.reject(error);
     }
 );
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CSRF INTERCEPTOR — AUTH CLIENT
+// AUTH REQUEST INTERCEPTOR
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Login/logout currently have CSRF disabled in SecurityConfig:
-//
-//     .ignoringRequestMatchers(
-//         "/api/**",
-//         "/login",
-//         "/logout",
-//         "/register"
-//     )
+// Login/logout are currently excluded from CSRF protection in the backend.
 //
 // We still attach the token when available so the client remains compatible
 // if CSRF protection is enabled for these endpoints later.
@@ -209,15 +315,23 @@ authAxios.interceptors.request.use(
             'patch',
         ];
 
-        const method = config.method?.toLowerCase();
+        const method =
+            config.method?.toLowerCase();
 
-        if (mutatingMethods.includes(method)) {
+        if (
+            mutatingMethods.includes(method)
+        ) {
 
-            const token = getCsrfToken();
+            const token =
+                getCsrfToken();
 
             if (token) {
 
-                config.headers['X-XSRF-TOKEN'] = token;
+                config.headers =
+                    config.headers || {};
+
+                config.headers['X-XSRF-TOKEN'] =
+                    token;
             }
         }
 
@@ -225,6 +339,7 @@ authAxios.interceptors.request.use(
     },
 
     (error) => {
+
         return Promise.reject(error);
     }
 );
@@ -234,23 +349,42 @@ authAxios.interceptors.request.use(
 // NORMAL API RESPONSE INTERCEPTOR
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Handles session expiration for normal authenticated API requests.
+// Handles:
+//
+//     401 Unauthorized
+//     403 Forbidden
 //
 // IMPORTANT:
-// The authAxios client intentionally does NOT use this interceptor.
-// Therefore a failed /login request will remain a normal 401 response and
-// will not redirect the browser.
+//
+// authAxios does NOT use this interceptor.
+//
+// Therefore:
+//
+//     POST /login
+//
+// returning 401 will NOT redirect the browser to:
+//
+//     /login?expired
+//
+// Only normal authenticated API requests use the session-expiration logic.
 //
 
 axiosInstance.interceptors.response.use(
 
     (response) => {
+
         return response;
     },
 
     (error) => {
 
-        if (error.response?.status === 401) {
+        // ─────────────────────────────────────────────────────────────
+        // 401 — UNAUTHORIZED
+        // ─────────────────────────────────────────────────────────────
+
+        if (
+            error.response?.status === 401
+        ) {
 
             const currentPath =
                 window.location.pathname;
@@ -258,25 +392,62 @@ axiosInstance.interceptors.response.use(
             const requestUrl =
                 error.config?.url || '';
 
-            // Already on login page
+
+            // ─────────────────────────────────────────────────────────
+            // Check whether user is already on login page
+            // ─────────────────────────────────────────────────────────
+
             const isLoginPage =
                 currentPath === '/login' ||
                 currentPath.startsWith('/login');
 
-            // Initial session check
-            const isSessionCheck =
-                requestUrl.includes('/api/dashboard/user');
 
-            if (!isLoginPage && !isSessionCheck) {
+            // ─────────────────────────────────────────────────────────
+            // Check initial session request
+            // ─────────────────────────────────────────────────────────
+            //
+            // After the request interceptor runs, a request that was:
+            //
+            //     /api/dashboard/user
+            //
+            // becomes:
+            //
+            //     /dashboard/user
+            //
+            // Therefore check for /dashboard/user.
+            //
+
+            const isSessionCheck =
+                requestUrl.includes('/dashboard/user');
+
+
+            // ─────────────────────────────────────────────────────────
+            // Redirect only when appropriate
+            // ─────────────────────────────────────────────────────────
+
+            if (
+                !isLoginPage &&
+                !isSessionCheck
+            ) {
 
                 window.location.href =
                     '/login?expired';
             }
-
-        } else if (error.response?.status === 403) {
-
-            window.location.href = '/403';
         }
+
+
+        // ─────────────────────────────────────────────────────────────
+        // 403 — FORBIDDEN
+        // ─────────────────────────────────────────────────────────────
+
+        else if (
+            error.response?.status === 403
+        ) {
+
+            window.location.href =
+                '/403';
+        }
+
 
         return Promise.reject(error);
     }
