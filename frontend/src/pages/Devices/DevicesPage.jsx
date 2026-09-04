@@ -349,7 +349,32 @@ export default function DevicesPage() {
 
               <br />
 
-              3. Set{' '}
+              3. Open Command Prompt in the folder
+              where the agent was downloaded.
+
+              <br />
+
+              4. Run the following commands:
+
+              <pre
+                style={{
+                  margin: '8px 0',
+                  padding: 10,
+                  background: '#111',
+                  color: '#fff',
+                  borderRadius: 6,
+                  overflowX: 'auto',
+                  fontSize: '.72rem',
+                  lineHeight: 1.6,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+{`set SENTINELCORE_AGENT_TOKEN=YOUR_DEVICE_TOKEN
+java -jar sentinelcore-agent-1.0.0.jar`}
+              </pre>
+
+              5. Replace{' '}
               <code
                 style={{
                   color: '#000',
@@ -358,28 +383,25 @@ export default function DevicesPage() {
                   borderRadius: 4,
                 }}
               >
-                SENTINELCORE_URL
+                YOUR_DEVICE_TOKEN
               </code>{' '}
-              to your backend URL.
+              with the device token generated above.
 
               <br />
 
-              4. Set{' '}
-              <code
+              6. Keep the agent running to continue
+              sending telemetry.
+
+              <p
                 style={{
-                  color: '#000',
-                  background: '#eee',
-                  padding: '2px 4px',
-                  borderRadius: 4,
+                  margin: '10px 0 0',
+                  color: '#555',
+                  fontSize: '.72rem',
                 }}
               >
-                SENTINELCORE_AGENT_TOKEN
-              </code>{' '}
-              to your device token.
-
-              <br />
-
-              5. Start the agent.
+                The agent automatically connects to
+                the SentinelCore production server.
+              </p>
 
             </div>
 
@@ -661,6 +683,7 @@ export default function DevicesPage() {
   );
 }
 
+
 /* KPI CARD */
 function Mini({ label, value }) {
   return (
@@ -686,6 +709,7 @@ function Mini({ label, value }) {
     </div>
   );
 }
+
 
 /* TELEMETRY INFO */
 function Info({ k, v }) {
@@ -716,6 +740,7 @@ function Info({ k, v }) {
     </div>
   );
 }
+
 
 /* STYLES */
 const inputStyle = {
