@@ -98,7 +98,7 @@ export default function DevicesPage() {
 
     const url = `${
       import.meta.env.VITE_API_URL || ''
-    }/api/agents/stream/${selected}`;
+    }/agents/stream/${selected}`;
 
     const source = new EventSource(url, {
       withCredentials: true,
