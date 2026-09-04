@@ -223,7 +223,9 @@ export default function DevicesPage() {
             <div style={{ marginTop: 14 }}>
 
               <strong
-                style={{ fontSize: '.8rem' }}
+                style={{
+                  fontSize: '.8rem',
+                }}
               >
                 Device token — shown once
               </strong>
@@ -261,22 +263,31 @@ export default function DevicesPage() {
             style={{
               marginTop: 18,
               padding: 14,
-              border:
-                '1px solid var(--border-color)',
+              border: '1px solid var(--border-color)',
               borderRadius: 10,
               fontSize: '.75rem',
               lineHeight: 1.6,
+              color: '#111',
+              background: '#fff',
             }}
           >
 
-            <strong>
+            <strong
+              style={{
+                display: 'block',
+                fontSize: '.85rem',
+                color: '#111',
+                marginBottom: 8,
+              }}
+            >
               Agent setup
             </strong>
 
             <p
               style={{
-                margin: '8px 0 12px',
-                color: 'var(--text-muted)',
+                margin: '0 0 12px',
+                color: '#555',
+                fontSize: '.78rem',
               }}
             >
               Download the SentinelCore Agent
@@ -285,23 +296,24 @@ export default function DevicesPage() {
 
             {/* DOWNLOAD BUTTON */}
             <a
-              href="https://github.com/Santhosh200429/SentinelCore-SecureOps/releases/latest/download/sentinelcore-agent-1.0.0.jar"
-              download
+              href={`${import.meta.env.VITE_API_URL}/downloads/windows-agent`}
               target="_blank"
               rel="noopener noreferrer"
               style={{
                 display: 'block',
                 width: '100%',
                 boxSizing: 'border-box',
-                padding: '10px 14px',
+                padding: '11px 14px',
                 borderRadius: 8,
                 textAlign: 'center',
                 textDecoration: 'none',
                 fontWeight: 700,
-                background:
-                  'var(--text-primary)',
-                color: 'var(--bg-base)',
+                fontSize: '.82rem',
+                background: '#000',
+                color: '#fff',
+                border: '1px solid #000',
                 marginBottom: 12,
+                cursor: 'pointer',
               }}
             >
               ↓ Download Windows Agent
@@ -311,13 +323,19 @@ export default function DevicesPage() {
             <div
               style={{
                 padding: 10,
-                border:
-                  '1px solid var(--border-color)',
+                border: '1px solid #ddd',
                 borderRadius: 8,
+                color: '#222',
+                background: '#fafafa',
+                lineHeight: 1.7,
               }}
             >
 
-              <strong>
+              <strong
+                style={{
+                  color: '#111',
+                }}
+              >
                 After downloading:
               </strong>
 
@@ -332,7 +350,14 @@ export default function DevicesPage() {
               <br />
 
               3. Set{' '}
-              <code>
+              <code
+                style={{
+                  color: '#000',
+                  background: '#eee',
+                  padding: '2px 4px',
+                  borderRadius: 4,
+                }}
+              >
                 SENTINELCORE_URL
               </code>{' '}
               to your backend URL.
@@ -340,7 +365,14 @@ export default function DevicesPage() {
               <br />
 
               4. Set{' '}
-              <code>
+              <code
+                style={{
+                  color: '#000',
+                  background: '#eee',
+                  padding: '2px 4px',
+                  borderRadius: 4,
+                }}
+              >
                 SENTINELCORE_AGENT_TOKEN
               </code>{' '}
               to your device token.
@@ -404,6 +436,7 @@ export default function DevicesPage() {
                     <tr key={a.id}>
 
                       <td>
+
                         <button
                           onClick={() =>
                             a.assetId &&
@@ -423,6 +456,7 @@ export default function DevicesPage() {
                         >
                           {a.name}
                         </button>
+
                       </td>
 
                       <td>
@@ -442,6 +476,7 @@ export default function DevicesPage() {
                       </td>
 
                       <td>
+
                         <button
                           onClick={() =>
                             revoke(a.id)
@@ -456,6 +491,7 @@ export default function DevicesPage() {
                         >
                           Revoke
                         </button>
+
                       </td>
 
                     </tr>
@@ -558,6 +594,7 @@ export default function DevicesPage() {
             >
 
               <div>
+
                 <Info
                   k="Hostname"
                   v={telemetry.hostname}
@@ -579,9 +616,11 @@ export default function DevicesPage() {
                     telemetry.architecture
                   }
                 />
+
               </div>
 
               <div>
+
                 <Info
                   k="Processor"
                   v={
@@ -609,6 +648,7 @@ export default function DevicesPage() {
                     telemetry.ipAddress
                   }
                 />
+
               </div>
 
             </div>
@@ -627,9 +667,11 @@ function Mini({ label, value }) {
     <div className="kpi-card blue">
 
       <div className="kpi-card-header">
+
         <span className="kpi-card-title">
           {label}
         </span>
+
       </div>
 
       <div
@@ -658,6 +700,7 @@ function Info({ k, v }) {
         fontSize: '.82rem',
       }}
     >
+
       <span
         style={{
           color: 'var(--text-muted)',
@@ -669,6 +712,7 @@ function Info({ k, v }) {
       <strong>
         {v ?? '—'}
       </strong>
+
     </div>
   );
 }
