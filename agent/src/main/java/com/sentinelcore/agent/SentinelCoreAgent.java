@@ -61,16 +61,28 @@ public class SentinelCoreAgent {
     /*
      * Environment variables:
      *
-     * SENTINELCORE_URL
-     * SENTINELCORE_AGENT_TOKEN
-     * SENTINELCORE_INTERVAL_SECONDS
+     * SENTINELCORE_URL (optional)
+     * SENTINELCORE_AGENT_TOKEN (required)
+     * SENTINELCORE_INTERVAL_SECONDS (optional)
      *
-     * Example:
-     * SENTINELCORE_URL=http://localhost:8081
+     * If SENTINELCORE_URL is not configured,
+     * the agent automatically connects to the
+     * SentinelCore production server.
      */
+
+    /*
+     * Production SentinelCore backend.
+     *
+     * Users do not need to configure SENTINELCORE_URL
+     * unless they intentionally want to connect the agent
+     * to another SentinelCore server.
+     */
+    private static final String DEFAULT_SERVER_URL =
+            "https://sentinelcore-secureops-o5wr.onrender.com";
+
     private final String baseUrl = env(
             "SENTINELCORE_URL",
-            "http://localhost:8081"
+            DEFAULT_SERVER_URL
     ).trim().replaceAll("/$", "");
 
     private final String token = env(
@@ -79,7 +91,10 @@ public class SentinelCoreAgent {
     ).trim();
 
     private final int interval = Integer.parseInt(
-            env("SENTINELCORE_INTERVAL_SECONDS", "5").trim()
+            env(
+                    "SENTINELCORE_INTERVAL_SECONDS",
+                    "5"
+            ).trim()
     );
 
     private long[] previousTicks;
@@ -143,7 +158,9 @@ public class SentinelCoreAgent {
 
         double cpuPct = previousTicks == null
                 ? 0
-                : cpu.getSystemCpuLoadBetweenTicks(previousTicks) * 100.0;
+                : cpu.getSystemCpuLoadBetweenTicks(
+                        previousTicks
+                ) * 100.0;
 
         previousTicks = ticks;
 
@@ -153,10 +170,12 @@ public class SentinelCoreAgent {
         long totalDisk = 0;
         long freeDisk = 0;
 
-        for (OSFileStore fs :
+        for (
+                OSFileStore fs :
                 si.getOperatingSystem()
                         .getFileSystem()
-                        .getFileStores()) {
+                        .getFileStores()
+        ) {
 
             totalDisk += Math.max(
                     0,
@@ -190,18 +209,24 @@ public class SentinelCoreAgent {
             );
         }
 
-        OperatingSystem os = si.getOperatingSystem();
+        OperatingSystem os =
+                si.getOperatingSystem();
 
-        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> m =
+                new LinkedHashMap<>();
 
         /*
          * Endpoint identity
          */
-        m.put("machineId", machineId);
+        m.put(
+                "machineId",
+                machineId
+        );
 
         m.put(
                 "hostname",
-                os.getNetworkParams().getHostName()
+                os.getNetworkParams()
+                        .getHostName()
         );
 
         m.put(
@@ -219,7 +244,8 @@ public class SentinelCoreAgent {
 
         m.put(
                 "osVersion",
-                os.getVersionInfo().toString()
+                os.getVersionInfo()
+                        .toString()
         );
 
         m.put(
@@ -232,7 +258,8 @@ public class SentinelCoreAgent {
          */
         m.put(
                 "processor",
-                cpu.getProcessorIdentifier().getName()
+                cpu.getProcessorIdentifier()
+                        .getName()
         );
 
         m.put(
@@ -258,8 +285,8 @@ public class SentinelCoreAgent {
                 round(
                         (
                                 1.0
-                                - (double) mem.getAvailable()
-                                / (double) mem.getTotal()
+                                        - (double) mem.getAvailable()
+                                        / (double) mem.getTotal()
                         ) * 100
                 )
         );
@@ -271,8 +298,8 @@ public class SentinelCoreAgent {
                         : round(
                                 (
                                         1.0
-                                        - (double) freeDisk
-                                        / (double) totalDisk
+                                                - (double) freeDisk
+                                                / (double) totalDisk
                                 ) * 100
                         )
         );
@@ -365,7 +392,8 @@ public class SentinelCoreAgent {
                     .start();
 
             String out = new String(
-                    p.getInputStream().readAllBytes(),
+                    p.getInputStream()
+                            .readAllBytes(),
                     java.nio.charset.StandardCharsets.UTF_8
             );
 
@@ -456,9 +484,6 @@ public class SentinelCoreAgent {
 
                 /*
                  * Currently uses collection time.
-                 *
-                 * We can later improve this to use the
-                 * actual Windows TimeCreated value.
                  */
                 e.put(
                         "timestamp",
