@@ -128,6 +128,7 @@ public class SecurityConfig {
                         "/register",
                         "/api/users/register",
                         "/api/agent/telemetry",
+                        "/api/downloads/windows-agent",
                         "/access-denied",
                         "/error",
                         "/actuator/health"
